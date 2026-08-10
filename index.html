@@ -194,7 +194,7 @@
     // ⚙️ 設定區功能：複製「邀請文案 + 網站連結」
 function copySiteUrl() {
   const url = window.location.href;
-  const shareText = `【🪬 猴爪許願機】\n天下沒有免費的午餐，成年人必須為自己的選擇付出代價... 🪬\n\n👉 快來向猴爪許願，看看你需要付出什麼代價：\n${url}`;
+  const shareText = `【🪬 猴爪許願機】\n天下沒有免費的午餐，每個人必須為自己的選擇付出代價... 🪬\n\n👉 快來向猴爪許願，看看你需要付出什麼代價：\n${url}`;
 
   navigator.clipboard.writeText(shareText).then(() => {
     alert('已成功複製邀請訊息與連結！快去貼給朋友吧！');
