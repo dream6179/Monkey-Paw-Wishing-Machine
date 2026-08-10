@@ -294,3 +294,24 @@ button:disabled {
 .modal-btn.primary:hover {
   background: #a00000;
 }
+/* 檢舉按鈕容器 */
+.report-link-container {
+  margin-top: 12px;
+  text-align: right;
+}
+
+.report-link-btn {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  transition: color 0.2s;
+  width: auto;
+}
+
+.report-link-btn:hover {
+  color: #e63946;
+}
