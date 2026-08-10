@@ -315,6 +315,17 @@ button:disabled {
   text-decoration: none;
 }
 
+/* 微型免責聲明腳註 */
+.disclaimer {
+  margin-top: 24px;
+  padding-top: 12px;
+  border-top: 1px dashed #22222d;
+  font-size: 0.7rem;
+  color: #555566;
+  text-align: center;
+  letter-spacing: 0.5px;
+  opacity: 0.6;
+}
 .report-link-btn:hover {
   opacity: 1;
   color: #888899; /* 滑鼠懸停才稍微亮起 */
