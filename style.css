@@ -294,6 +294,7 @@ button:disabled {
 .modal-btn.primary:hover {
   background: #a00000;
 }
+
 /* 檢舉按鈕容器 */
 .report-link-container {
   margin-top: 12px;
