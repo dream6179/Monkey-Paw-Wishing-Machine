@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>猴爪許願機 | The Monkey's Paw</title>
+  <style>
+    :root {
+      --bg-color: #0f0f12;
+      --card-bg: #18181f;
+      --accent-color: #8b0000;
+      --text-color: #e0e0e0;
+      --gold-color: #d4af37;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid #2a2a35;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+      text-align: center;
+    }
+
+    h1 {
+      color: var(--gold-color);
+      font-size: 1.8rem;
+      margin-bottom: 8px;
+      letter-spacing: 2px;
+    }
+
+    p.subtitle {
+      color: #888;
+      font-size: 0.9rem;
+      margin-bottom: 24px;
+    }
+
+    /* 猴爪手指狀態 */
+    .paw-status {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+      letter-spacing: 10px;
+    }
+
+    .finger {
+      display: inline-block;
+      transition: transform 0.5s ease, opacity 0.5s ease;
+      filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.4));
+    }
+
+    .finger.folded {
+      opacity: 0.2;
+      transform: translateY(10px) scale(0.8);
+      filter: none;
+    }
+
+    /* 許願輸入框 */
+    .wish-box {
+      margin-bottom: 24px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 100px;
+      background: #0d0d10;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #fff;
+      padding: 12px;
+      font-size: 1rem;
+      resize: none;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+
+    textarea:focus {
+      border-color: var(--gold-color);
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent-color);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.1s;
+    }
+
+    button:hover:not(:disabled) {
+      background: #a00000;
+    }
+
+    button:disabled {
+      background: #444;
+      cursor: not-allowed;
+    }
+
+    /* 回應顯示區 */
+    .result-card {
+      display: none;
+      margin-top: 24px;
+      text-align: left;
+      background: #0f0f14;
+      border-left: 4px solid var(--accent-color);
+      padding: 16px;
+      border-radius: 4px;
+      line-height: 1.6;
+    }
+
+    .result-section {
+      margin-bottom: 12px;
+    }
+
+    .result-section h3 {
+      font-size: 0.95rem;
+      color: var(--gold-color);
+      margin-bottom: 4px;
+    }
+
+    .result-section p {
+      font-size: 0.95rem;
+      color: #ccc;
+    }
+
+    .taunt {
+      font-style: italic;
+      color: #e63946 !important;
+    }
+
+    .loading {
+      display: none;
+      margin-top: 20px;
+      color: var(--gold-color);
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>🪬 猴爪許願機</h1>
+    <p class="subtitle">慎重選擇你的願望，因為每一項禮物都標好了詛咒的代價。</p>
+
+    <!-- 剩餘願望手指顯示 -->
+    <div class="paw-status">
+      <span class="finger" id="f1">🖐️</span>
+      <span class="finger" id="f2">🖐️</span>
+      <span class="finger" id="f3">🖐️</span>
+    </div>
+
+    <div class="wish-box">
+      <textarea id="wishInput" placeholder="寫下你的願望...（例如：我希望變得非常有錢）"></textarea>
+      <button id="wishBtn" onclick="makeWish()">向猴爪許願</button>
+    </div>
+
+    <div class="loading" id="loading">猴爪正在扭曲現實...</div>
+
+    <div class="result-card" id="resultCard">
+      <div class="result-section">
+        <h3>【願望實現】</h3>
+        <p id="grantedText"></p>
+      </div>
+      <div class="result-section">
+        <h3>【恐怖副作用】</h3>
+        <p id="sideEffectText"></p>
+      </div>
+      <div class="result-section">
+        <h3>【精靈的嘲諷】</h3>
+        <p id="tauntText" class="taunt"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let wishesLeft = 3;
+
+    async function makeWish() {
+      const input = document.getElementById('wishInput');
+      const wish = input.value.trim();
+
+      if (!wish) {
+        alert('請先寫下你的願望！');
+        return;
+      }
+
+      if (wishesLeft <= 0) {
+        alert('猴爪的手指已全部折下，契約已終結...');
+        return;
+      }
+
+      // UI 狀態更新
+      const btn = document.getElementById('wishBtn');
+      const loading = document.getElementById('loading');
+      const resultCard = document.getElementById('resultCard');
+
+      btn.disabled = true;
+      loading.style.display = 'block';
+      resultCard.style.display = 'none';
+
+      try {
+        const response = await fetch('/api/wish', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ wish })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) throw new Error(data.error || '願望被現實拒絕了');
+
+        // 渲染結果
+        document.getElementById('grantedText').innerText = data.granted;
+        document.getElementById('sideEffectText').innerText = data.side_effect;
+        document.getElementById('tauntText').innerText = data.taunt;
+
+        resultCard.style.display = 'block';
+
+        // 扣除手指次數與動畫
+        document.getElementById(`f${4 - wishesLeft}`).classList.add('folded');
+        wishesLeft--;
+
+        input.value = '';
+
+        if (wishesLeft === 0) {
+          btn.innerText = '靈魂已被收取（次數耗盡）';
+        }
+
+      } catch (err) {
+        alert('許願失敗：' + err.message);
+      } finally {
+        btn.disabled = wishesLeft === 0;
+        loading.style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html>
