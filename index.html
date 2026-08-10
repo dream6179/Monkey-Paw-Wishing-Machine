@@ -8,7 +8,6 @@
   <meta name="description" content="向古老的猴爪許願，獲得字面上的完美實現以及出乎意料的可怕詛咒。">
   <meta name="theme-color" content="#0f0f12">
 
-  <!-- Emoji Favicon & PWA App 設定 -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪬</text></svg>">
   <link rel="manifest" href="/manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -21,13 +20,11 @@
 <body>
 
   <div class="container">
-    <!-- 頂部標題與齒輪按鈕 -->
     <div class="header-bar">
       <h1>🪬 猴爪許願機</h1>
       <button class="icon-btn" onclick="toggleModal(true)" title="設定與說明">⚙️</button>
     </div>
 
-    <!-- 許願次數統計 -->
     <div class="paw-status">
       已簽訂契約次數：<span id="wishCounter">0</span> 次
     </div>
@@ -39,23 +36,18 @@
 
     <div class="loading" id="loading">猴爪正在扭曲現實...</div>
 
-    <!-- 許願結果卡片 -->
+    <!-- 許願結果卡片（移除嘲諷，改為獲得與代價） -->
     <div class="result-card" id="resultCard">
       <div class="result-section">
         <h3>【願望實現】</h3>
         <p id="grantedText"></p>
       </div>
       <div class="result-section">
-        <h3>【恐怖副作用】</h3>
-        <p id="sideEffectText"></p>
-      </div>
-      <div class="result-section">
-        <h3>【精靈的嘲諷】</h3>
-        <p id="tauntText" class="taunt"></p>
+        <h3>【慘痛代價】</h3>
+        <p id="costText"></p>
       </div>
 
-      <!-- 單次許願結果分享按鈕 -->
-      <button class="share-btn" onclick="shareWishResult()">🔗 將這個詛咒分享給好友</button>
+      <button class="share-btn" onclick="shareWishResult()">🔗 將這個契約分享給好友</button>
     </div>
   </div>
 
@@ -69,14 +61,13 @@
       
       <div class="modal-body">
         <div class="modal-section">
-          <h3>📜 遊戲規則</h3>
-          <p>源自 W. W. Jacobs 的經典恐怖故事。猴爪精靈會嚴格根據你的「字面描述」實現願望，但每一個願望都伴隨著不可預知的黑暗代價。</p>
+          <h3>📜 核心哲學</h3>
+          <p>源自經典故事「猴爪」。人生沒有捷徑，成年人必須為自己的選擇與貪婪承擔代價。精靈會字面實現你的願望，但隨之而來的代價將全數作用於你個人身上。</p>
         </div>
 
-        <!-- 🔗 齒輪內的全新分享專區 -->
         <div class="modal-section">
           <h3>🔗 邀請朋友許願</h3>
-          <p>獨樂樂不如眾樂樂，讓朋友也來體驗許願的下場：</p>
+          <p>看看你的朋友會為了什麼捷徑賣掉自己的靈魂：</p>
           <div class="modal-share-btns">
             <button class="modal-btn" onclick="copySiteUrl()">📋 複製網址</button>
             <button class="modal-btn primary" onclick="shareSiteNative()">📲 系統分享</button>
@@ -127,8 +118,7 @@
         lastWishResult = { wish, ...data };
 
         document.getElementById('grantedText').innerText = data.granted;
-        document.getElementById('sideEffectText').innerText = data.side_effect;
-        document.getElementById('tauntText').innerText = data.taunt;
+        document.getElementById('costText').innerText = data.cost;
 
         resultCard.style.display = 'block';
 
@@ -143,7 +133,6 @@
       }
     }
 
-    // 1. ⚙️ 設定區功能：純複製網站網址
     function copySiteUrl() {
       const url = window.location.href;
       navigator.clipboard.writeText(url).then(() => {
@@ -153,11 +142,10 @@
       });
     }
 
-    // 2. ⚙️ 設定區功能：呼叫原生分享（含網站介紹詞）
     async function shareSiteNative() {
       const shareData = {
         title: '猴爪許願機 | The Monkey\'s Paw',
-        text: '來向古老邪惡的猴爪許願吧！小心你的願望成真... 🪬',
+        text: '天下沒有免費的午餐，成年人必須為自己的選擇付出代價。來向猴爪許願吧... 🪬',
         url: window.location.href
       };
 
@@ -168,23 +156,20 @@
           if (err.name !== 'AbortError') console.log('分享失敗:', err);
         }
       } else {
-        // 若電腦或瀏覽器不支援原生分享，自動降級為複製網址
         copySiteUrl();
       }
     }
 
-    // 3. 🎯 結果區功能：分享單次許願內容與代價
     async function shareWishResult() {
       const shareUrl = window.location.href;
-      let shareText = "來向古老邪惡的猴爪許願吧！小心你的願望成真... 🪬";
+      let shareText = "天下沒有免費的午餐，成年人必須為自己的選擇付出代價... 🪬";
 
       if (lastWishResult) {
         shareText = `【🪬 猴爪許願機】\n` +
                     `我許願：「${lastWishResult.wish}」\n\n` +
                     `✨ 願望實現：${lastWishResult.granted}\n` +
-                    `💀 恐怖副作用：${lastWishResult.side_effect}\n` +
-                    `😈 精靈嘲諷：${lastWishResult.taunt}\n\n` +
-                    `快來看看你的願望會帶來什麼代價：`;
+                    `💀 慘痛代價：${lastWishResult.cost}\n\n` +
+                    `看看你許願需要付出什麼代價：`;
       }
 
       if (navigator.share) {
@@ -200,14 +185,13 @@
       } else {
         const fullContent = `${shareText}\n${shareUrl}`;
         navigator.clipboard.writeText(fullContent).then(() => {
-          alert('許願結果與連結已複製到剪貼簿！');
+          alert('許願契約與連結已複製到剪貼簿！');
         }).catch(() => {
           alert('複製失敗，請手動複製！');
         });
       }
     }
 
-    // Modal 控制邏輯
     function toggleModal(show) {
       const modal = document.getElementById('settingsModal');
       modal.classList.toggle('active', show);
