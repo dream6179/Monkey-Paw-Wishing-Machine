@@ -295,24 +295,27 @@ button:disabled {
   background: #a00000;
 }
 
-/* 檢舉按鈕容器 */
-.report-link-container {
-  margin-top: 12px;
-  text-align: right;
+/* 右下角隱密小按鈕容器 */
+.card-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
 }
 
 .report-link-btn {
   background: none;
   border: none;
-  color: #666;
-  font-size: 0.78rem;
+  color: #555566;
+  font-size: 0.7rem; /* 極小字體 */
   cursor: pointer;
-  padding: 0;
-  text-decoration: underline;
-  transition: color 0.2s;
+  padding: 2px 4px;
+  opacity: 0.4; /* 平時半透明微弱顯示 */
+  transition: opacity 0.2s, color 0.2s;
   width: auto;
+  text-decoration: none;
 }
 
 .report-link-btn:hover {
-  color: #e63946;
+  opacity: 1;
+  color: #888899; /* 滑鼠懸停才稍微亮起 */
 }
