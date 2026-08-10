@@ -12,8 +12,8 @@ export async function onRequestPost(context) {
       return new Response(JSON.stringify({ error: "尚未設定 GEMINI_API_KEY 環境變數" }), { status: 500 });
     }
 
-    // 呼叫 Gemini API (使用最新的 gemini-2.5-flash)
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    // 將模型切換為 Gemma 4 31B Instruct (gemma-4-31b-it)
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemma-4-31b-it:generateContent?key=${apiKey}`;
 
     const promptBody = {
       contents: [
@@ -48,11 +48,11 @@ export async function onRequestPost(context) {
     const apiData = await apiResponse.json();
 
     if (!apiResponse.ok) {
-      console.error("Gemini API Error:", apiData);
-      return new Response(JSON.stringify({ error: "Gemini 拒絕回應許願" }), { status: 500 });
+      console.error("Gemma API Error:", apiData);
+      return new Response(JSON.stringify({ error: "精靈拒絕回應許願" }), { status: 500 });
     }
 
-    // 解析 Gemini 回傳的 JSON 字串
+    // 解析 Gemma 回傳的 JSON 字串
     const rawText = apiData.candidates[0].content.parts[0].text;
     const parsedData = JSON.parse(rawText);
 
