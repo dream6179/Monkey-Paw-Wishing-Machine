@@ -1,12 +1,76 @@
+// 經典高頻願望備用快取 (硬編碼備援)
+const PRESET_CACHE = [
+  {
+    keywords: [/1億/, /一億/, /一百萬/, /100萬/, /很有錢/, /暴富/, /發財/, /樂透/],
+    response: {
+      granted: "你的銀行帳戶瞬間多出了一筆 1 億元的鉅款，來源顯示為人壽保險理賠金。",
+      side_effect: "這筆錢來自於你最親近的家人搭乘班機發生重大意外的理賠金，且無法退回。",
+      taunt: "你現在非常有錢了，希望你的豪宅夠大，大到能裝下你餘生的孤獨。"
+    }
+  },
+  {
+    keywords: [/睡到自然醒/, /不用上班/, /不上班/, /退休/, /不工作/],
+    response: {
+      granted: "你再也不用上班，每天都可以躺在床上睡到自然醒。",
+      side_effect: "你罹患了一種罕見的全身性肌肉萎縮症，終生無法下床，甚至連動一根手指都辦不到。",
+      taunt: "祝賀你，現在全世界都無法打擾你的睡眠了。"
+    }
+  }
+];
+
 export async function onRequestPost(context) {
   try {
-    const { request, env } = context;
+    const { request, env, waitUntil } = context;
     const { wish } = await request.json();
 
     if (!wish) {
       return new Response(JSON.stringify({ error: "許願內容不能為空" }), { status: 400 });
     }
 
+    const cleanWish = wish.trim();
+    // 建立標準化 Key (去除前後空格並轉小寫，確保一致性)
+    const cacheKey = "wish_v1:" + encodeURIComponent(cleanWish.toLowerCase()).substring(0, 150);
+
+    // ==========================================================================
+    // 🛡️【第一道防線：Cloudflare KV 全球邊緣快取】
+    // ==========================================================================
+    if (env.WISHER_KV) {
+      const cachedData = await env.WISHER_KV.get(cacheKey);
+      if (cachedData) {
+        console.log(`🎯 完美命中 KV 快取！Key: ${cacheKey}`);
+        return new Response(cachedData, {
+          headers: { 
+            "Content-Type": "application/json; charset=utf-8",
+            "X-Cache-Status": "HIT_KV"
+          }
+        });
+      }
+    }
+
+    // ==========================================================================
+    // ⚡【第二道防線：硬編碼 Preset 關鍵字快取】
+    // ==========================================================================
+    for (const item of PRESET_CACHE) {
+      if (item.keywords.some(regex => regex.test(cleanWish))) {
+        const presetPayload = JSON.stringify(item.response);
+        
+        // 順便把命中 Preset 的結果寫入 KV，加速後續查詢
+        if (env.WISHER_KV && waitUntil) {
+          waitUntil(env.WISHER_KV.put(cacheKey, presetPayload));
+        }
+
+        return new Response(presetPayload, {
+          headers: { 
+            "Content-Type": "application/json; charset=utf-8",
+            "X-Cache-Status": "HIT_PRESET"
+          }
+        });
+      }
+    }
+
+    // ==========================================================================
+    // 🧠【第三道防線：Gemma 4 31B 現採推理】
+    // ==========================================================================
     const apiKey = env.GEMINI_API_KEY;
     if (!apiKey) {
       return new Response(JSON.stringify({ error: "尚未設定 GEMINI_API_KEY 環境變數" }), { status: 500 });
@@ -26,15 +90,10 @@ export async function onRequestPost(context) {
   "taunt": "嘲諷許願者的一句話"
 }
 
-使用者許願內容：${wish}`;
+使用者許願內容：${cleanWish}`;
 
     const promptBody = {
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: promptText }]
-        }
-      ],
+      contents: [{ role: "user", parts: [{ text: promptText }] }],
       generationConfig: {
         temperature: 0.7,
         responseMimeType: "application/json"
@@ -50,22 +109,29 @@ export async function onRequestPost(context) {
     const apiData = await apiResponse.json();
 
     if (!apiResponse.ok) {
-      console.error("Gemma API Error:", apiData);
       return new Response(JSON.stringify({ error: apiData.error?.message || "精靈拒絕回應許願" }), { status: 500 });
     }
 
-    // 1. 處理 parts 陣列：過濾掉明確標記為思考過程的 part，並將其餘文字合併
+    // 提取文字並進行洗滌解構
     const parts = apiData.candidates?.[0]?.content?.parts || [];
-    const fullText = parts
-      .filter(p => !p.thought) // 忽略 API 自動標記為 thought 的區塊
-      .map(p => p.text || "")
-      .join("\n");
-
-    // 2. 進行多重清洗與 JSON 解析
+    const fullText = parts.filter(p => !p.thought).map(p => p.text || "").join("\n");
     const parsedData = parseModelJsonResponse(fullText);
+    const finalPayload = JSON.stringify(parsedData);
 
-    return new Response(JSON.stringify(parsedData), {
-      headers: { "Content-Type": "application/json" }
+    // ==========================================================================
+    // 💾【功德圓滿：非同步背景寫入 KV 記憶體】
+    // ==========================================================================
+    if (env.WISHER_KV && waitUntil) {
+      // 永久保存或設定 30 天過期 (例如 TTL: 2592000)
+      waitUntil(env.WISHER_KV.put(cacheKey, finalPayload));
+      console.log(`💾 成功將生成結果寫入 KV 邊緣庫！Key: ${cacheKey}`);
+    }
+
+    return new Response(finalPayload, {
+      headers: { 
+        "Content-Type": "application/json; charset=utf-8",
+        "X-Cache-Status": "MISS"
+      }
     });
 
   } catch (err) {
@@ -74,12 +140,11 @@ export async function onRequestPost(context) {
 }
 
 /**
- * 專為帶有思考過程 (Reasoning/CoT) 的模型設計的 JSON 解析器
+ * 專為帶有思考過程的模型設計的 JSON 解析器
  */
 function parseModelJsonResponse(text) {
   if (!text) throw new Error("精靈沒有給予任何回應");
 
-  // 1. 移除 <think>...</think> 或 <thought>...</thought> 思考區塊
   let cleaned = text
     .replace(/<think>[\s\S]*?<\/think>/gi, "")
     .replace(/<thought>[\s\S]*?<\/thought>/gi, "")
@@ -87,41 +152,17 @@ function parseModelJsonResponse(text) {
     .replace(/```/g, "")
     .trim();
 
-  // 2. 先嘗試直接解析
-  try {
-    return JSON.parse(cleaned);
-  } catch (e) {
-    // 繼續向下處置
-  }
+  try { return JSON.parse(cleaned); } catch (e) {}
 
-  // 3. 找出所有像是 JSON 的 `{...}` 區塊（從後往前解析，因為真正的回答通常在思考過程之後）
   const matches = [...cleaned.matchAll(/\{[\s\S]*?\}/g)];
   if (matches.length > 0) {
-    // 從最後一個匹配到的區塊開始倒著試
     for (let i = matches.length - 1; i >= 0; i--) {
       try {
-        const candidate = matches[i][0];
-        const parsed = JSON.parse(candidate);
-        // 確保抓到的 JSON 含有我們需要的 key
+        const parsed = JSON.parse(matches[i][0]);
         if (parsed.granted && parsed.side_effect && parsed.taunt) {
           return parsed;
         }
-      } catch (err) {
-        // 解析失敗則繼續試前一個
-      }
-    }
-  }
-
-  // 4. 救援處理：若因換行符號問題導致解析失敗
-  const fallbackMatch = cleaned.match(/\{[\s\S]*\}/);
-  if (fallbackMatch) {
-    try {
-      const sanitized = fallbackMatch[0]
-        .replace(/\r/g, "")
-        .replace(/\n/g, "\\n");
-      return JSON.parse(sanitized);
-    } catch (e) {
-      // 救援失敗
+      } catch (err) {}
     }
   }
 
