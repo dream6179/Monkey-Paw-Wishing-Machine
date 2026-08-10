@@ -54,8 +54,8 @@
         <p id="tauntText" class="taunt"></p>
       </div>
 
-      <!-- 原生分享按鈕 -->
-      <button class="share-btn" onclick="shareWish()">🔗 將這個詛咒分享給好友</button>
+      <!-- 單次許願結果分享按鈕 -->
+      <button class="share-btn" onclick="shareWishResult()">🔗 將這個詛咒分享給好友</button>
     </div>
   </div>
 
@@ -73,6 +73,16 @@
           <p>源自 W. W. Jacobs 的經典恐怖故事。猴爪精靈會嚴格根據你的「字面描述」實現願望，但每一個願望都伴隨著不可預知的黑暗代價。</p>
         </div>
 
+        <!-- 🔗 齒輪內的全新分享專區 -->
+        <div class="modal-section">
+          <h3>🔗 邀請朋友許願</h3>
+          <p>獨樂樂不如眾樂樂，讓朋友也來體驗許願的下場：</p>
+          <div class="modal-share-btns">
+            <button class="modal-btn" onclick="copySiteUrl()">📋 複製網址</button>
+            <button class="modal-btn primary" onclick="shareSiteNative()">📲 系統分享</button>
+          </div>
+        </div>
+
         <div class="modal-section">
           <h3>📱 如何安裝為手機 App？</h3>
           <p><strong>iOS (Safari)：</strong> 點擊瀏覽器底部的「分享」按鈕 ➔ 選擇「新增至主畫面」。</p>
@@ -84,7 +94,7 @@
 
   <script>
     let totalWishes = 0;
-    let lastWishResult = null; // 紀錄最後一次許願結果以便分享
+    let lastWishResult = null;
 
     async function makeWish() {
       const input = document.getElementById('wishInput');
@@ -114,7 +124,6 @@
 
         if (!response.ok) throw new Error(data.error || '願望被現實拒絕了');
 
-        // 保存最後一次願望內容與結果
         lastWishResult = { wish, ...data };
 
         document.getElementById('grantedText').innerText = data.granted;
@@ -134,8 +143,38 @@
       }
     }
 
-    // 📱 呼叫手機原生 Web Share API
-    async function shareWish() {
+    // 1. ⚙️ 設定區功能：純複製網站網址
+    function copySiteUrl() {
+      const url = window.location.href;
+      navigator.clipboard.writeText(url).then(() => {
+        alert('網站網址已成功複製到剪貼簿！');
+      }).catch(() => {
+        alert('複製失敗，請手動複製網址：' + url);
+      });
+    }
+
+    // 2. ⚙️ 設定區功能：呼叫原生分享（含網站介紹詞）
+    async function shareSiteNative() {
+      const shareData = {
+        title: '猴爪許願機 | The Monkey\'s Paw',
+        text: '來向古老邪惡的猴爪許願吧！小心你的願望成真... 🪬',
+        url: window.location.href
+      };
+
+      if (navigator.share) {
+        try {
+          await navigator.share(shareData);
+        } catch (err) {
+          if (err.name !== 'AbortError') console.log('分享失敗:', err);
+        }
+      } else {
+        // 若電腦或瀏覽器不支援原生分享，自動降級為複製網址
+        copySiteUrl();
+      }
+    }
+
+    // 3. 🎯 結果區功能：分享單次許願內容與代價
+    async function shareWishResult() {
       const shareUrl = window.location.href;
       let shareText = "來向古老邪惡的猴爪許願吧！小心你的願望成真... 🪬";
 
@@ -156,36 +195,28 @@
             url: shareUrl
           });
         } catch (err) {
-          if (err.name !== 'AbortError') console.log('分享取消或失敗:', err);
+          if (err.name !== 'AbortError') console.log('分享失敗:', err);
         }
       } else {
-        // 電腦版或不支援原生分享時的 Fallback：複製到剪貼簿
         const fullContent = `${shareText}\n${shareUrl}`;
         navigator.clipboard.writeText(fullContent).then(() => {
-          alert('許願結果與連結已複製到剪貼簿，快貼給朋友吧！');
+          alert('許願結果與連結已複製到剪貼簿！');
         }).catch(() => {
-          alert('複製失敗，請手動複製網址分享！');
+          alert('複製失敗，請手動複製！');
         });
       }
     }
 
-    // ⚙️ Modal 彈窗控制邏輯
+    // Modal 控制邏輯
     function toggleModal(show) {
       const modal = document.getElementById('settingsModal');
-      if (show) {
-        modal.classList.add('active');
-      } else {
-        modal.classList.remove('active');
-      }
+      modal.classList.toggle('active', show);
     }
 
     function handleOverlayClick(e) {
-      if (e.target.id === 'settingsModal') {
-        toggleModal(false);
-      }
+      if (e.target.id === 'settingsModal') toggleModal(false);
     }
 
-    // 註冊 Service Worker
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW Error:', err));
