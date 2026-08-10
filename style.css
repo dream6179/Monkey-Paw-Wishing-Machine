@@ -44,36 +44,41 @@ h1 {
 p.subtitle {
   color: #888;
   font-size: 0.9rem;
-  margin-bottom: 24px;
-}
-
-/* 猴爪手指狀態 */
-.paw-status {
-  font-size: 2.5rem;
   margin-bottom: 20px;
-  letter-spacing: 10px;
 }
 
-.finger {
-  display: inline-block;
-  transition: transform 0.5s ease, opacity 0.5s ease;
-  filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.4));
+/* 遊戲玩法簡單說明 */
+.game-desc {
+  background: #111116;
+  border: 1px dashed #333344;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 0.85rem;
+  color: #aaa;
+  margin-bottom: 20px;
+  text-align: left;
+  line-height: 1.5;
 }
 
-.finger.folded {
-  opacity: 0.2;
-  transform: translateY(10px) scale(0.8);
-  filter: none;
+.game-desc strong {
+  color: var(--gold-color);
+}
+
+/* 許願次數統計 */
+.paw-status {
+  font-size: 1rem;
+  margin-bottom: 16px;
+  color: var(--gold-color);
 }
 
 /* 許願輸入框 */
 .wish-box {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 textarea {
   width: 100%;
-  height: 100px;
+  height: 90px;
   background: #0d0d10;
   border: 1px solid #333;
   border-radius: 8px;
@@ -114,7 +119,7 @@ button:disabled {
 /* 回應顯示區 */
 .result-card {
   display: none;
-  margin-top: 24px;
+  margin-top: 20px;
   text-align: left;
   background: #0f0f14;
   border-left: 4px solid var(--accent-color);
@@ -148,4 +153,28 @@ button:disabled {
   margin-top: 20px;
   color: var(--gold-color);
   font-size: 0.9rem;
+}
+
+/* 安裝 App 指引腳註 */
+.install-footer {
+  margin-top: 25px;
+  padding-top: 15px;
+  border-top: 1px solid #22222d;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.install-footer summary {
+  cursor: pointer;
+  color: #888;
+  outline: none;
+}
+
+.install-footer summary:hover {
+  color: var(--gold-color);
+}
+
+.install-footer p {
+  margin-top: 8px;
+  line-height: 1.4;
 }
