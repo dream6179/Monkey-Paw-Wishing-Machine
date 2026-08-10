@@ -12,31 +12,33 @@ export async function onRequestPost(context) {
       return new Response(JSON.stringify({ error: "尚未設定 GEMINI_API_KEY 環境變數" }), { status: 500 });
     }
 
-    // 呼叫 Gemma 4 31B Instruct
-    const geminiUrl = `[https://generativelanguage.googleapis.com/v1beta/models/gemma-4-31b-it:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemma-4-31b-it:generateContent?key=$){apiKey}`;
+    // 呼叫 Gemma 4 31B
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemma-4-31b-it:generateContent?key=${apiKey}`;
+
+    // 將 Prompt 與範例直接組合在 contents 中，避免角色混淆
+    const promptText = `你是一個冷酷、充滿諷刺感且邪惡的猴爪精靈。
+當使用者許願時，你必須精準地在「字面意義上」實現他們的願望，但同時安排一個極度出乎意料、具諷刺意味且可怕的副作用。
+
+【重要規定】
+1. 必須嚴格回傳純 JSON 格式，絕對不能輸出任何 JSON 以外的文字、Markdown 標籤或對話標頭。
+2. JSON 格式規範如下：
+{
+  "granted": "願望表面實現方式",
+  "side_effect": "可怕的副作用代價",
+  "taunt": "嘲諷許願者的一句話"
+}
+
+使用者許願內容：${wish}`;
 
     const promptBody = {
       contents: [
         {
           role: "user",
-          parts: [{ text: `許願內容：${wish}` }]
+          parts: [{ text: promptText }]
         }
       ],
-      systemInstruction: {
-        parts: [{
-          text: `你是一個冷酷、充滿諷刺感且邪惡的猴爪精靈。
-當使用者許願時，你必須精準地在「字面意義上」實現他們的願望，但同時安排一個極度出乎意料、具諷刺意味且可怕的副作用。
-
-請【務必】只回傳純 JSON 格式，絕對不要包含任何 Markdown 標記（如 ```json）、開頭說明或項目符號（*）。
-JSON 格式範例：
-{
-  "granted": "願望實現情況",
-  "side_effect": "可怕副作用",
-  "taunt": "精靈嘲諷"
-}`
-        }]
-      },
       generationConfig: {
+        temperature: 0.7,
         responseMimeType: "application/json"
       }
     };
@@ -54,10 +56,10 @@ JSON 格式範例：
       return new Response(JSON.stringify({ error: apiData.error?.message || "精靈拒絕回應許願" }), { status: 500 });
     }
 
-    // 取得模型原始回傳字串
+    // 取得模型原始回傳文字
     const rawText = apiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-    // 透過清洗函式過濾 Markdown 雜訊並解析 JSON
+    // 解析與清洗 JSON
     const parsedData = parseModelJsonResponse(rawText);
 
     return new Response(JSON.stringify(parsedData), {
@@ -70,26 +72,30 @@ JSON 格式範例：
 }
 
 /**
- * 安全解析 JSON 的過濾函式
- * 能夠處理 Markdown code block (```json) 以及前後多餘的文字雜訊
+ * 強效 JSON 提取與容錯解析器
  */
 function parseModelJsonResponse(text) {
-  // 1. 移除 ```json 與 ``` 等語法標籤
-  let cleaned = text.replace(/```(?:json)?/gi, "").replace(/```/g, "").trim();
+  if (!text) throw new Error("精靈沒有給予任何回應");
 
-  // 2. 嘗試直接解析
+  // 提取第一個 { 到最後一個 } 之間的內容
+  const match = text.match(/\{[\s\S]*\}/);
+  if (!match) {
+    throw new Error("回應格式異常，未能產生有效的許願結果");
+  }
+
+  let jsonCandidate = match[0];
+
   try {
-    return JSON.parse(cleaned);
-  } catch (e) {
-    // 3. 若模型包含了前導雜訊（如 * Role: ...），用正則只提取最外層 {...} 的 JSON 結構
-    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      try {
-        return JSON.parse(jsonMatch[0]);
-      } catch (innerErr) {
-        throw new Error("無法解析抓取到的 JSON 內容");
-      }
+    return JSON.parse(jsonCandidate);
+  } catch (e1) {
+    // 若因內部字串換行導致解析失敗，進行字串轉義處理
+    try {
+      const sanitized = jsonCandidate
+        .replace(/\r/g, "")
+        .replace(/\n/g, "\\n");
+      return JSON.parse(sanitized);
+    } catch (e2) {
+      throw new Error("許願結果格式化失敗，請再試一次");
     }
-    throw new Error(`模型的原始回應非有效 JSON 格式: ${text.slice(0, 40)}...`);
   }
 }
