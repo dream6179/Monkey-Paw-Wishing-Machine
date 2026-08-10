@@ -10,7 +10,7 @@ const PRESET_CACHE = [
   {
     keywords: [/1億/, /一億/, /一百萬/, /100萬/, /很有錢/, /暴富/, /發財/],
     response: {
-      granted: "你的銀行帳戶瞬間多出了 1 億元現金，你可以自由劃撥支用。",
+      granted: "你的銀行帳戶瞬間多出了一大筆錢，你可以自由劃撥支用。",
       cost: "你獲得了這筆錢，但未來你將付出身家性命成倍的代價。不久後你捲入了巨額洗錢案，不僅全部資產被查扣，還背負了 2 億元的黑道追債與終生監禁。"
     }
   },
@@ -128,11 +128,14 @@ export async function onRequestPost(context) {
       body: JSON.stringify(promptBody)
     });
 
-    const apiData = await apiResponse.json();
-
+    // 當 API 額度用盡或伺服器流量過高 (503/429) 時，統一攔截並提示精靈繁忙
     if (!apiResponse.ok) {
-      return new Response(JSON.stringify({ error: apiData.error?.message || "精靈拒絕回應許願" }), { status: 500 });
+      return new Response(JSON.stringify({ 
+        error: "精靈正忙於處理解不完的貪婪願望（伺服器繁忙），請稍後再來！" 
+      }), { status: 503 });
     }
+
+    const apiData = await apiResponse.json();
 
     const parts = apiData.candidates?.[0]?.content?.parts || [];
     const fullText = parts.filter(p => !p.thought).map(p => p.text || "").join("\n");
@@ -148,7 +151,10 @@ export async function onRequestPost(context) {
     });
 
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    // 捕捉其他連線或解析例外，一樣友好提示精靈繁忙
+    return new Response(JSON.stringify({ 
+      error: "精靈正忙於處理解不完的貪婪願望（伺服器繁忙），請稍後再來！" 
+    }), { status: 503 });
   }
 }
 
