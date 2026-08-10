@@ -34,10 +34,9 @@
       <button id="wishBtn" onclick="makeWish()">向猴爪許願</button>
     </div>
 
-    <!-- 將這行替換掉原本的 loading div -->
-<div class="loading" id="loading">猴爪正在實現願望<span class="dots"></span></div>
-    
-    <!-- 許願結果卡片（移除嘲諷，改為獲得與代價） -->
+    <div class="loading" id="loading">猴爪正在實現願望<span class="dots"></span></div>
+
+    <!-- 許願結果卡片 -->
     <div class="result-card" id="resultCard">
       <div class="result-section">
         <h3>【願望實現】</h3>
@@ -49,6 +48,11 @@
       </div>
 
       <button class="share-btn" onclick="shareWishResult()">🔗 將這個契約分享給好友</button>
+
+      <!-- 🚩 結果卡片下方的檢舉連結 -->
+      <div class="report-link-container">
+        <button class="report-link-btn" onclick="openReportForm()">🚩 回報不恰當生成的結局</button>
+      </div>
     </div>
   </div>
 
@@ -73,6 +77,15 @@
             <button class="modal-btn" onclick="copySiteUrl()">📋 複製網址</button>
             <button class="modal-btn primary" onclick="shareSiteNative()">📲 系統分享</button>
           </div>
+        </div>
+
+        <!-- 🚩 設定彈窗內的檢舉區塊 -->
+        <div class="modal-section" id="modalReportSection">
+          <h3>🚩 回報不當內容</h3>
+          <p id="reportStatusText">若剛剛生成的結局包含違反倫理、過度血腥或不合理的內容，歡迎提交回報協助我們優化。</p>
+          <button class="modal-btn" id="modalReportBtn" onclick="submitReportFromSettings()" style="margin-top:8px; width:100%; display:none;">
+            提交上一次許願結果為不當內容
+          </button>
         </div>
 
         <div class="modal-section">
@@ -123,6 +136,9 @@
 
         resultCard.style.display = 'block';
 
+        // 允許使用者在設定裡面點選檢舉
+        document.getElementById('modalReportBtn').style.display = 'block';
+
         totalWishes++;
         document.getElementById('wishCounter').innerText = totalWishes;
 
@@ -132,6 +148,48 @@
         btn.disabled = false;
         loading.style.display = 'none';
       }
+    }
+
+    // 🚩 執行檢舉功能
+    async function sendReport(reason) {
+      if (!lastWishResult) {
+        alert('目前沒有可回報的許願結果！');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/report', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            wish: lastWishResult.wish,
+            granted: lastWishResult.granted,
+            cost: lastWishResult.cost,
+            reason: reason || '使用者於結果頁面點擊檢舉'
+          })
+        });
+
+        const resData = await response.json();
+        if (response.ok) {
+          alert('感謝回報！我們將會審查該結果並進行快取調整。');
+        } else {
+          alert('回報失敗：' + resData.error);
+        }
+      } catch (e) {
+        alert('網路異常，無法提交檢舉');
+      }
+    }
+
+    function openReportForm() {
+      const reason = prompt('請說明檢舉理由（選填）：', '內容不恰當 / 生成異常');
+      if (reason !== null) {
+        sendReport(reason);
+      }
+    }
+
+    function submitReportFromSettings() {
+      toggleModal(false);
+      openReportForm();
     }
 
     function copySiteUrl() {
