@@ -218,37 +218,44 @@
       }
     }
 
-    async function shareWishResult() {
-      const shareUrl = window.location.href;
-      let shareText = "天下沒有免費的午餐，每個人必須為自己的選擇付出代價... 🪬";
+    // 🎯 統一複製完整許願契約 + 網址
+async function shareWishResult() {
+  const shareUrl = window.location.href;
+  
+  // 組合排版漂亮的文字卡片
+  let shareText = `【🪬 猴爪許願機】\n` +
+              `天下沒有免費的午餐，每個人必須為自己的選擇付出代價...\n\n` +
+              `👉 快來看看你許願要付出什麼代價：\n${shareUrl}`;
 
-      if (lastWishResult) {
-        shareText = `【🪬 猴爪許願機】\n` +
-                    `我許願：「${lastWishResult.wish}」\n\n` +
-                    `✨ 願望實現：${lastWishResult.granted}\n` +
-                    `💀 慘痛代價：${lastWishResult.cost}\n\n` +
-                    `看看你許願需要付出什麼代價：`;
-      }
+  if (lastWishResult) {
+    shareText = `【🪬 猴爪許願機】\n` +
+                `我許願：「${lastWishResult.wish}」\n\n` +
+                `✨ 願望實現：${lastWishResult.granted}\n` +
+                `💀 慘痛代價：${lastWishResult.cost}\n\n` +
+                `👉 快來看看向猴爪許願要付出什麼代價：\n${shareUrl}`;
+  }
 
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: '猴爪許願機 | The Monkey\'s Paw',
-            text: shareText,
-            url: shareUrl
-          });
-        } catch (err) {
-          if (err.name !== 'AbortError') console.log('分享失敗:', err);
-        }
-      } else {
-        const fullContent = `${shareText}\n${shareUrl}`;
-        navigator.clipboard.writeText(fullContent).then(() => {
-          alert('許願契約與連結已複製到剪貼簿！');
-        }).catch(() => {
-          alert('複製失敗，請手動複製！');
+  // 優先嘗試寫入剪貼簿（跨平台最穩定）
+  try {
+    await navigator.clipboard.writeText(shareText);
+    alert('已複製完整許願契約與連結！快去貼給朋友吧！');
+  } catch (err) {
+    // 備援方案：若剪貼簿權限被阻擋，嘗試呼叫原生分享
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: '猴爪許願機 | The Monkey\'s Paw',
+          text: shareText,
+          url: shareUrl
         });
+      } catch (shareErr) {
+        if (shareErr.name !== 'AbortError') alert('複製失敗，請手動複製網址分享！');
       }
+    } else {
+      alert('複製失敗，請手動複製網址分享：\n' + shareUrl);
     }
+  }
+}
 
     function toggleModal(show) {
       const modal = document.getElementById('settingsModal');
