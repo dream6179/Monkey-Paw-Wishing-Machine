@@ -3,25 +3,43 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- 網站 SEO 說明與主題色 -->
   <title>猴爪許願機 | The Monkey's Paw</title>
-  <!-- 引入獨立的 CSS 樣式表 -->
+  <meta name="description" content="改編自經典恐怖故事「猴爪」，向古老的精靈許願，獲得字面上的完美實現以及出乎意料的可怕詛咒。">
+  <meta name="theme-color" content="#0f0f12">
+
+  <!-- 1. Emoji Favicon 圖標 (不需額外上傳圖片檔) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪬</text></svg>">
+
+  <!-- 2. PWA 與 iOS 主畫面 App 設定 -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="猴爪許願機">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2318181f'/><text y='.9em' font-size='80' x='10'>🪬</text></svg>">
+
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
   <div class="container">
     <h1>🪬 猴爪許願機</h1>
-    <p class="subtitle">慎重選擇你的願望，因為每一項禮物都標好了詛咒的代價。</p>
+    <p class="subtitle">The Monkey's Paw Wish Machine</p>
 
-    <!-- 剩餘願望手指顯示 -->
+    <!-- 網站說明區域 -->
+    <div class="game-desc">
+      <strong>📜 遊戲規則：</strong><br>
+      源自 W. W. Jacobs 的經典故事。猴爪精靈會嚴格根據你的「字面描述」實現願望，但每一個願望都伴隨著不可預知的黑暗代價。
+    </div>
+
+    <!-- 許願次數統計 -->
     <div class="paw-status">
-      <span class="finger" id="f1">🖐️</span>
-      <span class="finger" id="f2">🖐️</span>
-      <span class="finger" id="f3">🖐️</span>
+      已簽訂契約次數：<span id="wishCounter">0</span> 次
     </div>
 
     <div class="wish-box">
-      <textarea id="wishInput" placeholder="寫下你的願望...（例如：我希望變得非常有錢）"></textarea>
+      <textarea id="wishInput" placeholder="寫下你的願望...（例如：我希望能獲得1億元）"></textarea>
       <button id="wishBtn" onclick="makeWish()">向猴爪許願</button>
     </div>
 
@@ -41,10 +59,21 @@
         <p id="tauntText" class="taunt"></p>
       </div>
     </div>
+
+    <!-- App 安裝引導腳註 -->
+    <div class="install-footer">
+      <details>
+        <summary>📱 如何將「猴爪許願機」安裝到手機主畫面？</summary>
+        <p>
+          <strong>iOS (Safari)：</strong> 點擊瀏覽器底部的「分享」按鈕 ➔ 選擇「新增至主畫面」。<br>
+          <strong>Android (Chrome)：</strong> 點擊右上角選單「⋮」 ➔ 選擇「安裝應用程式」或「加到主畫面」。
+        </p>
+      </details>
+    </div>
   </div>
 
   <script>
-    let wishesLeft = 3;
+    let totalWishes = 0;
 
     async function makeWish() {
       const input = document.getElementById('wishInput');
@@ -52,11 +81,6 @@
 
       if (!wish) {
         alert('請先寫下你的願望！');
-        return;
-      }
-
-      if (wishesLeft <= 0) {
-        alert('猴爪的手指已全部折下，契約已終結...');
         return;
       }
 
@@ -85,21 +109,24 @@
 
         resultCard.style.display = 'block';
 
-        document.getElementById(`f${4 - wishesLeft}`).classList.add('folded');
-        wishesLeft--;
-
-        input.value = '';
-
-        if (wishesLeft === 0) {
-          btn.innerText = '靈魂已被收取（次數耗盡）';
-        }
+        totalWishes++;
+        document.getElementById('wishCounter').innerText = totalWishes;
 
       } catch (err) {
         alert('許願失敗：' + err.message);
       } finally {
-        btn.disabled = wishesLeft === 0;
+        btn.disabled = false;
         loading.style.display = 'none';
       }
+    }
+
+    // 註冊 PWA Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('Service Worker 註冊成功！'))
+          .catch(err => console.log('Service Worker 註冊失敗：', err));
+      });
     }
   </script>
 </body>
