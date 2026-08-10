@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <title>猴爪許願機 | The Monkey's Paw</title>
-  <meta name="description" content="向古老的猴爪許願，獲得字面上的完美實現以及出乎意料的可怕詛咒。">
+  <meta name="description" content="向古老的猴爪許願，獲得字面上的完美實現以及出乎意料的後果。">
   <meta name="theme-color" content="#0f0f12">
 
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪬</text></svg>">
@@ -66,12 +66,12 @@
       <div class="modal-body">
         <div class="modal-section">
           <h3>📜 核心哲學</h3>
-          <p>源自經典故事「猴爪」。人生沒有捷徑，成年人必須為自己的選擇與貪婪承擔代價。精靈會字面實現你的願望，但隨之而來的代價將全數作用於你個人身上。</p>
+          <p>源自經典故事「猴爪」。人生沒有捷徑，成年人必須為自己的選擇與貪婪承擔代價。精靈會字面實現你的願望，但隨之而來的代價將全數作用於你身上。</p>
         </div>
 
         <div class="modal-section">
           <h3>🔗 邀請朋友許願</h3>
-          <p>看看你的朋友會為了什麼捷徑賣掉自己的靈魂：</p>
+          <p>看看你的朋友會為了什麼賣掉自己的靈魂：</p>
           <div class="modal-share-btns">
             <button class="modal-btn" onclick="copySiteUrl()">📋 複製網址</button>
             <button class="modal-btn primary" onclick="shareSiteNative()">📲 系統分享</button>
@@ -203,7 +203,7 @@
     async function shareSiteNative() {
       const shareData = {
         title: '猴爪許願機 | The Monkey\'s Paw',
-        text: '天下沒有免費的午餐，成年人必須為自己的選擇付出代價。來向猴爪許願吧... 🪬',
+        text: '天下沒有免費的午餐，每個人必須為自己的選擇付出代價。來向猴爪許願吧... 🪬',
         url: window.location.href
       };
 
@@ -220,7 +220,7 @@
 
     async function shareWishResult() {
       const shareUrl = window.location.href;
-      let shareText = "天下沒有免費的午餐，成年人必須為自己的選擇付出代價... 🪬";
+      let shareText = "天下沒有免費的午餐，每個人必須為自己的選擇付出代價... 🪬";
 
       if (lastWishResult) {
         shareText = `【🪬 猴爪許願機】\n` +
