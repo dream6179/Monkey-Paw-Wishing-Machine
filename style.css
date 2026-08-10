@@ -295,7 +295,7 @@ button:disabled {
   background: #a00000;
 }
 
-/* 右下角隱密小按鈕容器 */
+/* 右下角小按鈕（提高對比度，清晰易讀） */
 .card-footer {
   display: flex;
   justify-content: flex-end;
@@ -305,28 +305,26 @@ button:disabled {
 .report-link-btn {
   background: none;
   border: none;
-  color: #555566;
-  font-size: 0.7rem; /* 極小字體 */
+  color: #888899; /* 調亮淺灰色，解決對比不足問題 */
+  font-size: 0.75rem;
   cursor: pointer;
   padding: 2px 4px;
-  opacity: 0.4; /* 平時半透明微弱顯示 */
-  transition: opacity 0.2s, color 0.2s;
+  transition: color 0.2s;
   width: auto;
   text-decoration: none;
 }
 
-/* 微型免責聲明腳註 */
+.report-link-btn:hover {
+  color: #e63946; /* 滑鼠懸停時顯示紅字，提示為回報功能 */
+}
+
+/* 頁腳微型免責聲明（提升對比度） */
 .disclaimer {
   margin-top: 24px;
   padding-top: 12px;
-  border-top: 1px dashed #22222d;
-  font-size: 0.7rem;
-  color: #555566;
+  border-top: 1px dashed #2a2a35;
+  font-size: 0.75rem;
+  color: #777788; /* 調亮顏色，不再與黑底混在一起 */
   text-align: center;
   letter-spacing: 0.5px;
-  opacity: 0.6;
-}
-.report-link-btn:hover {
-  opacity: 1;
-  color: #888899; /* 滑鼠懸停才稍微亮起 */
 }
