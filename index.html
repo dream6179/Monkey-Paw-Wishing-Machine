@@ -37,25 +37,24 @@
     <div class="loading" id="loading">猴爪正在實現願望<span class="dots"></span></div>
 
     <!-- 許願結果卡片 -->
-    <div class="result-card" id="resultCard">
-      <div class="result-section">
-        <h3>【願望實現】</h3>
-        <p id="grantedText"></p>
-      </div>
-      <div class="result-section">
-        <h3>【慘痛代價】</h3>
-        <p id="costText"></p>
-      </div>
-
-      <button class="share-btn" onclick="shareWishResult()">🔗 將這個契約分享給好友</button>
-
-      <!-- 🚩 結果卡片下方的檢舉連結 -->
-      <div class="report-link-container">
-        <button class="report-link-btn" onclick="openReportForm()">🚩 回報不恰當生成的結局</button>
-      </div>
-    </div>
+<div class="result-card" id="resultCard">
+  <div class="result-section">
+    <h3>【願望實現】</h3>
+    <p id="grantedText"></p>
+  </div>
+  <div class="result-section">
+    <h3>【慘痛代價】</h3>
+    <p id="costText"></p>
   </div>
 
+  <button class="share-btn" onclick="shareWishResult()">🔗 將這個契約分享給好友</button>
+
+  <!-- 右下角極低調小腳註按鈕 -->
+  <div class="card-footer">
+    <button class="report-link-btn" onclick="openReportForm()" title="回報內容">🚩 回報</button>
+  </div>
+</div>
+    
   <!-- ⚙️ 設定與說明 Modal 彈窗 -->
   <div id="settingsModal" class="modal-overlay" onclick="handleOverlayClick(event)">
     <div class="modal-content">
