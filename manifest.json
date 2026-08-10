@@ -1,0 +1,18 @@
+{
+  "name": "猴爪許願機 | The Monkey's Paw",
+  "short_name": "猴爪許願機",
+  "description": "向邪惡的猴爪許願，體驗字面實現與可怕副作用的暗黑許願小遊戲。",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f12",
+  "theme_color": "#0f0f12",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2318181f'/><text y='.9em' font-size='80' x='10'>🪬</text></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
