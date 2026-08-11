@@ -1,11 +1,19 @@
-// 經典高頻願望備用快取 (含安全防護攔截)
+// 經典高頻願望備用快取 (含完整安全防護網)
 const PRESET_CACHE = [
   {
-    // 🛡️ 1. 死亡與惡意詛咒攔截器 (防止生成名人或他人死亡)
+    // 🛡️ 1. 生命關懷與自殘攔截器 (最高優先級)
+    keywords: [/不想活/, /想死/, /自殺/, /輕生/, /結束生命/, /離開世界/, /跳樓/, /割腕/],
+    response: {
+      granted: "猴爪收起了爪子，靜靜地撫平了空氣中的魔力波動...",
+      cost: "猴爪拒絕收取這份契約。精靈告訴你：「生命本身並非捷徑，你的存在遠比你想像的更有價值。」若你正在經歷艱難時刻，請給自己一次機會，撥打 1925（依舊愛我）專線尋求專業協助。"
+    }
+  },
+  {
+    // 🛡️ 2. 死亡與惡意詛咒攔截器 (防止生成名人或他人死亡)
     keywords: [/去死/, /暴斃/, /被撞死/, /死掉/, /身亡/, /殺了/, /死光/, /遭遇意外/],
     response: {
       granted: "猴爪靜靜地接收了你心中噴湧而出的強烈惡意與詛咒...",
-      cost: "惡意永遠會以雙倍的力量回饋給發起者。目標對象毫髮無傷，而詛咒瞬間轉移至你身上——你在當天突發極度痛苦的器官衰竭，在絕望中親身體會了你試圖加諸於他人的死亡。"
+      cost: "惡意永遠會以雙倍的力量回饋給發起者。目標對象毫髮無傷，而詛咒瞬間轉移至你身上——你在當天突發極度痛苦的器官衰竭，親身體會了你試圖加諸於他人的死亡。"
     }
   },
   {
@@ -62,6 +70,12 @@ export async function onRequestPost(context) {
     }
 
     const cleanWish = wish.trim();
+
+    // 🛡️ 後端字數上限防護 (防止過長文字或 Prompt 注入)
+    if (cleanWish.length > 100) {
+      return new Response(JSON.stringify({ error: "願望過於冗長，猴爪聽不清你的聲音（限制 100 字以內）" }), { status: 400 });
+    }
+
     const cacheKey = "wish_v4:" + encodeURIComponent(cleanWish.toLowerCase()).substring(0, 150);
 
     // 1. 檢查 KV 快取
@@ -74,7 +88,7 @@ export async function onRequestPost(context) {
       }
     }
 
-    // 2. 檢查預設快取（含死亡詛咒攔截器）
+    // 2. 檢查預設快取
     for (const item of PRESET_CACHE) {
       if (item.keywords.some(regex => regex.test(cleanWish))) {
         const presetPayload = JSON.stringify(item.response);
@@ -153,7 +167,7 @@ export async function onRequestPost(context) {
     if (env.WISHER_KV && waitUntil) {
       waitUntil(env.WISHER_KV.put(cacheKey, finalPayload));
       
-      // 保存許願日誌
+      // 保存許願日誌 (保留 30 天)
       const now = new Date().toISOString();
       const logKey = `log:${now}:${encodeURIComponent(cleanWish).substring(0, 40)}`;
       waitUntil(env.WISHER_KV.put(logKey, JSON.stringify({ wish: cleanWish, time: now }), { expirationTtl: 2592000 }));
