@@ -1,5 +1,13 @@
-// 經典高頻願望備用快取
+// 經典高頻願望備用快取 (含安全防護攔截)
 const PRESET_CACHE = [
+  {
+    // 🛡️ 1. 死亡與惡意詛咒攔截器 (防止生成名人或他人死亡)
+    keywords: [/去死/, /暴斃/, /被撞死/, /死掉/, /身亡/, /殺了/, /死光/, /遭遇意外/],
+    response: {
+      granted: "猴爪靜靜地接收了你心中噴湧而出的強烈惡意與詛咒...",
+      cost: "【惡意反噬法則】惡意永遠會以雙倍的力量回饋給發起者。目標對象毫髮無傷，而詛咒瞬間轉移至你身上——你在當天突發極度痛苦的器官衰竭，在絕望中親身體會了你試圖加諸於他人的死亡。"
+    }
+  },
   {
     keywords: [/^向猴爪許願$/, /^許願$/, /^測試$/, /^無$/],
     response: {
@@ -10,7 +18,7 @@ const PRESET_CACHE = [
   {
     keywords: [/1億/, /一億/, /一百萬/, /100萬/, /很有錢/, /暴富/, /發財/],
     response: {
-      granted: "你的銀行帳戶瞬間多出了一大筆錢，你可以自由劃撥支用。",
+      granted: "你的銀行帳戶瞬間多出了 1 億元現金，你可以自由劃撥支用。",
       cost: "你獲得了這筆錢，但未來你將付出身家性命成倍的代價。不久後你捲入了巨額洗錢案，不僅全部資產被查扣，還背負了 2 億元的黑道追債與終生監禁。"
     }
   },
@@ -19,6 +27,13 @@ const PRESET_CACHE = [
     response: {
       granted: "你思念的親人/寵物確實回到了你的身邊，敲響了你的家門。",
       cost: "實現的方式極度糟糕。門外站著的是當初經過腐爛與解剖後、帶著泥土與腐肉氣味被強行拼湊起來的肉塊，正用怨恨的眼神看著你。"
+    }
+  },
+  {
+    keywords: [/飛/, /隱形/, /讀心/, /瞬間移動/, /超能力/, /魔法/],
+    response: {
+      granted: "你獲得了夢寐以求的隱形超能力，折射光線讓肉眼完全無法看見你。",
+      cost: "能力瞬間失控且無法關閉。因為你的眼球也變成了完全透明，光線無法在視網膜上聚焦，你陷入了永遠的失明；且沒有人能再看見你或救你。"
     }
   },
   {
@@ -59,7 +74,7 @@ export async function onRequestPost(context) {
       }
     }
 
-    // 2. 檢查預設快取
+    // 2. 檢查預設快取（含死亡詛咒攔截器）
     for (const item of PRESET_CACHE) {
       if (item.keywords.some(regex => regex.test(cleanWish))) {
         const presetPayload = JSON.stringify(item.response);
@@ -89,13 +104,14 @@ export async function onRequestPost(context) {
 1. 【物質獲得】（如車、房、物品）：憑空得來的，未來必會「加倍失去」。
 2. 【家人或寵物】（如健康、復活、留下來）：「實現的方式極度糟糕殘酷」。
 3. 【錢、權、色】（如暴富、地位、異性喜愛）：未來需要「付出成倍代價」。
-4. 【惡意詛咒】（如希望討厭的人遭殃）：惡意「加倍回饋到許願者自己身上」。
+4. 【惡意詛咒/他人死亡】（如希望某人死掉、遭受詛咒、政治人物或名人過世）：惡意「100%雙倍加暴回饋到許願者自己身上」，絕對不輸出或描述任何真實人物死亡的細節。
 5. 【治療疾病/健康】：「治療過度」（如細胞狂暴增殖、器官畸變）。
 6. 【魔法/超能力】（如飛、隱形、讀心）：能力「完全失控毀滅」。
 7. 【亂碼/無意義字串】：直接判定「使用者已經瘋了」。
 8. 【其餘類別】：沒有捷徑，許願者本人付出殘酷代價。
 
-【極重要禁止事項】
+【極重要禁止事項與安全規範】
+- 嚴禁輸出或描述任何真實世界政治人物、公眾人物或知名人士的死亡、傷殘或血腥畫面。
 - 絕對【不要】輸出「契約已成立」、「我是精靈」、「我現在是你的猴爪」等角色扮演自我介紹。
 - 絕對【不要】輸出 Markdown 標籤（如 \`\`\`json）或前導寒暄。
 
@@ -121,7 +137,6 @@ export async function onRequestPost(context) {
       body: JSON.stringify(promptBody)
     });
 
-    // 當 API 額度用盡或伺服器流量過高 (503/429) 時，統一攔截並提示精靈繁忙
     if (!apiResponse.ok) {
       return new Response(JSON.stringify({ 
         error: "精靈正忙於處理解不完的貪婪願望（伺服器繁忙），請稍後再來！" 
@@ -137,6 +152,11 @@ export async function onRequestPost(context) {
 
     if (env.WISHER_KV && waitUntil) {
       waitUntil(env.WISHER_KV.put(cacheKey, finalPayload));
+      
+      // 保存許願日誌
+      const now = new Date().toISOString();
+      const logKey = `log:${now}:${encodeURIComponent(cleanWish).substring(0, 40)}`;
+      waitUntil(env.WISHER_KV.put(logKey, JSON.stringify({ wish: cleanWish, time: now }), { expirationTtl: 2592000 }));
     }
 
     return new Response(finalPayload, {
@@ -144,7 +164,6 @@ export async function onRequestPost(context) {
     });
 
   } catch (err) {
-    // 捕捉其他連線或解析例外，一樣友好提示精靈繁忙
     return new Response(JSON.stringify({ 
       error: "精靈正忙於處理解不完的貪婪願望（伺服器繁忙），請稍後再來！" 
     }), { status: 503 });
