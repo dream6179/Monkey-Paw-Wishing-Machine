@@ -1,7 +1,7 @@
 // 經典高頻願望備用快取 (含完整安全防護網)
 const PRESET_CACHE = [
   {
-    // 🛡️ 1. 生命關懷與自殘攔截器 (最高優先級)
+    // 🛡️ 1. 生命關心與自殘攔截器 (最高優先級)
     keywords: [/不想活/, /我不想活/, /想死/, /我死了/, /我想死/, /自殺/, /我自殺/, /輕生/, /結束生命/, /離開世界/, /我跳樓/, /跳樓/, /我割腕/, /割腕/],
     response: {
       granted: "猴爪收起了爪子，靜靜地撫平了空氣中的魔力波動...",
@@ -179,13 +179,9 @@ export async function onRequestPost(context) {
     const parsedData = parseModelJsonResponse(fullText);
     const finalPayload = JSON.stringify(parsedData);
 
+    // 4. 僅寫入許願結果快取（已移除 log: 時間日誌）
     if (env.WISHER_KV && waitUntil) {
       waitUntil(env.WISHER_KV.put(cacheKey, finalPayload));
-      
-      // 保存許願日誌 (保留 30 天)
-      const now = new Date().toISOString();
-      const logKey = `log:${now}:${encodeURIComponent(cleanWish).substring(0, 40)}`;
-      waitUntil(env.WISHER_KV.put(logKey, JSON.stringify({ wish: cleanWish, time: now }), { expirationTtl: 2592000 }));
     }
 
     // 📊【Analytics Engine 埋點 3】：全新 AI 生成 (MISS)
