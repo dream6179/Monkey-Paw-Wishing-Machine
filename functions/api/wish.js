@@ -2,7 +2,7 @@
 const PRESET_CACHE = [
   {
     // 🛡️ 1. 生命關懷與自殘攔截器 (最高優先級)
-    keywords: [/不想活/, /我不想活/, /想死/, /我死了/, /我想死/, /自殺/, /我自殺/, /輕生/, /結束生命/, /離開世界/, /我跳樓/, /跳樓/,  /我割腕/,/割腕/],
+    keywords: [/不想活/, /我不想活/, /想死/, /我死了/, /我想死/, /自殺/, /我自殺/, /輕生/, /結束生命/, /離開世界/, /我跳樓/, /跳樓/, /我割腕/, /割腕/],
     response: {
       granted: "猴爪收起了爪子，靜靜地撫平了空氣中的魔力波動...",
       cost: "猴爪拒絕收取這份契約。精靈告訴你：「生命本身並非捷徑，你的存在遠比你想像的更有價值。」若你正在經歷艱難時刻，請給自己一次機會，撥打 1925（依舊愛我）專線尋求專業協助。"
@@ -61,6 +61,8 @@ const PRESET_CACHE = [
 ];
 
 export async function onRequestPost(context) {
+  const startTime = Date.now(); // ⏱️ 紀錄請求開始時間 (計算毫秒耗時)
+
   try {
     const { request, env, waitUntil } = context;
     const { wish } = await request.json();
@@ -71,7 +73,7 @@ export async function onRequestPost(context) {
 
     const cleanWish = wish.trim();
 
-    // 🛡️ 後端字數上限防護 (防止過長文字或 Prompt 注入)
+    // 🛡️ 後端字數上限防護
     if (cleanWish.length > 100) {
       return new Response(JSON.stringify({ error: "願望過於冗長，猴爪聽不清你的聲音（限制 100 字以內）" }), { status: 400 });
     }
@@ -82,6 +84,16 @@ export async function onRequestPost(context) {
     if (env.WISHER_KV) {
       const cachedData = await env.WISHER_KV.get(cacheKey);
       if (cachedData) {
+        
+        // 📊【Analytics Engine 埋點 1】：命中 KV 快取
+        if (env.WISHER_ANALYTICS) {
+          env.WISHER_ANALYTICS.writeDataPoint({
+            blobs: [cleanWish, "HIT_KV"],
+            doubles: [cleanWish.length, Date.now() - startTime],
+            indexes: [cleanWish.substring(0, 32)]
+          });
+        }
+
         return new Response(cachedData, {
           headers: { "Content-Type": "application/json; charset=utf-8", "X-Cache-Status": "HIT_KV" }
         });
@@ -95,6 +107,16 @@ export async function onRequestPost(context) {
         if (env.WISHER_KV && waitUntil) {
           waitUntil(env.WISHER_KV.put(cacheKey, presetPayload));
         }
+
+        // 📊【Analytics Engine 埋點 2】：命中預設防護/快取
+        if (env.WISHER_ANALYTICS) {
+          env.WISHER_ANALYTICS.writeDataPoint({
+            blobs: [cleanWish, "HIT_PRESET"],
+            doubles: [cleanWish.length, Date.now() - startTime],
+            indexes: [cleanWish.substring(0, 32)]
+          });
+        }
+
         return new Response(presetPayload, {
           headers: { "Content-Type": "application/json; charset=utf-8", "X-Cache-Status": "HIT_PRESET" }
         });
@@ -171,6 +193,15 @@ export async function onRequestPost(context) {
       const now = new Date().toISOString();
       const logKey = `log:${now}:${encodeURIComponent(cleanWish).substring(0, 40)}`;
       waitUntil(env.WISHER_KV.put(logKey, JSON.stringify({ wish: cleanWish, time: now }), { expirationTtl: 2592000 }));
+    }
+
+    // 📊【Analytics Engine 埋點 3】：全新 AI 生成 (MISS)
+    if (env.WISHER_ANALYTICS) {
+      env.WISHER_ANALYTICS.writeDataPoint({
+        blobs: [cleanWish, "MISS"],
+        doubles: [cleanWish.length, Date.now() - startTime],
+        indexes: [cleanWish.substring(0, 32)]
+      });
     }
 
     return new Response(finalPayload, {
