@@ -30,7 +30,9 @@
     </div>
 
     <div class="wish-box">
-      <textarea id="wishInput" placeholder="寫下你的願望...（例如：我希望能獲得1億元）"></textarea>
+      <!-- 1. 輸入框加上字數限制 -->
+<textarea id="wishInput" maxlength="100" placeholder="寫下你的願望（100字以內）...（例如：我希望能獲得1億元）"></textarea>
+
       <button id="wishBtn" onclick="makeWish()">向猴爪許願</button>
     </div>
 
@@ -100,54 +102,65 @@
     let totalWishes = 0;
     let lastWishResult = null;
 
-    async function makeWish() {
-      const input = document.getElementById('wishInput');
-      const wish = input.value.trim();
+    // 2. JavaScript 中的 makeWish 加上 3 秒防刷冷卻
+async function makeWish() {
+  const input = document.getElementById('wishInput');
+  const wish = input.value.trim();
 
-      if (!wish) {
-        alert('請先寫下你的願望！');
-        return;
-      }
+  if (!wish) {
+    alert('請先寫下你的願望！');
+    return;
+  }
 
-      const btn = document.getElementById('wishBtn');
-      const loading = document.getElementById('loading');
-      const resultCard = document.getElementById('resultCard');
+  if (wish.length > 100) {
+    alert('願望過長，請控制在 100 字以內！');
+    return;
+  }
 
-      btn.disabled = true;
-      loading.style.display = 'block';
-      resultCard.style.display = 'none';
+  const btn = document.getElementById('wishBtn');
+  const loading = document.getElementById('loading');
+  const resultCard = document.getElementById('resultCard');
 
-      try {
-        const response = await fetch('/api/wish', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ wish })
-        });
+  // 鎖定按鈕
+  btn.disabled = true;
+  loading.style.display = 'block';
+  resultCard.style.display = 'none';
 
-        const data = await response.json();
+  try {
+    const response = await fetch('/api/wish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wish })
+    });
 
-        if (!response.ok) throw new Error(data.error || '願望被現實拒絕了');
+    const data = await response.json();
 
-        lastWishResult = { wish, ...data };
+    if (!response.ok) throw new Error(data.error || '願望被現實拒絕了');
 
-        document.getElementById('grantedText').innerText = data.granted;
-        document.getElementById('costText').innerText = data.cost;
+    lastWishResult = { wish, ...data };
 
-        resultCard.style.display = 'block';
+    document.getElementById('grantedText').innerText = data.granted;
+    document.getElementById('costText').innerText = data.cost;
 
-        // 允許使用者在設定裡面點選檢舉
-        document.getElementById('modalReportBtn').style.display = 'block';
+    resultCard.style.display = 'block';
 
-        totalWishes++;
-        document.getElementById('wishCounter').innerText = totalWishes;
+    document.getElementById('modalReportBtn').style.display = 'block';
 
-      } catch (err) {
-        alert('許願失敗：' + err.message);
-      } finally {
-        btn.disabled = false;
-        loading.style.display = 'none';
-      }
-    }
+    totalWishes++;
+    document.getElementById('wishCounter').innerText = totalWishes;
+
+  } catch (err) {
+    alert('許願失敗：' + err.message);
+  } finally {
+    loading.style.display = 'none';
+    
+    // ⏳ 3 秒防刷冷卻倒數，防止使用者狂按爆擊 API
+    setTimeout(() => {
+      btn.disabled = false;
+    }, 3000);
+  }
+}
+
 
     // 🚩 執行檢舉功能
     async function sendReport(reason) {
